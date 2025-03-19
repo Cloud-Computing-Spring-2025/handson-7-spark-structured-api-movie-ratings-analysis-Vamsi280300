@@ -22,15 +22,24 @@ def load_data(spark, file_path):
     df = spark.read.csv(file_path, header=True, schema=schema)
     return df
 
-def identify_churn_risk_users(df):
+def identify_churn_risk_users(spark, df):
     """
     Identify users with canceled subscriptions and low watch time (<100 minutes).
-
-    TODO: Implement the following steps:
-    1. Filter users where `SubscriptionStatus = 'Canceled'` AND `WatchTime < 100`.
-    2. Count the number of such users.
     """
-    pass  # Remove this line after implementation
+    
+    churn_risk_users = df.filter((df["SubscriptionStatus"] == "Canceled") & (df["WatchTime"] < 100))
+    
+    #
+    churn_risk_count = churn_risk_users.count()
+
+    
+    total_users_count = df.filter((df["SubscriptionStatus"] == "Canceled") & (df["WatchTime"] < 100)).count()
+
+    
+    result_df = spark.createDataFrame([(churn_risk_count, total_users_count)], ["Churn Risk Users", "Total Users"])
+    
+    return result_df
+
 
 def write_output(result_df, output_path):
     """
@@ -44,11 +53,11 @@ def main():
     """
     spark = initialize_spark()
 
-    input_file = "/workspaces/MovieRatingsAnalysis/input/movie_ratings_data.csv"
-    output_file = "/workspaces/MovieRatingsAnalysis/outputs/churn_risk_users.csv"
+    input_file = "input/movie_ratings_data.csv"
+    output_file = "Outputs/churn_risk_users.csv"
 
     df = load_data(spark, input_file)
-    result_df = identify_churn_risk_users(df)  # Call function here
+    result_df = identify_churn_risk_users(spark,df)  # Call function here
     write_output(result_df, output_file)
 
     spark.stop()
